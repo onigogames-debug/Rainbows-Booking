@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Copy, Check, MessageSquare, User, Clock, AlertCircle } from 'lucide-react';
+import { Copy, Check, MessageSquare, User, Clock, AlertCircle, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { eventService } from '../services/eventService';
@@ -15,6 +15,7 @@ export function EventDetail() {
   const [comment, setComment] = useState('');
   const [copied, setCopied] = useState(false);
   const [myParticipantId, setMyParticipantId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -64,6 +65,7 @@ export function EventDetail() {
     e.preventDefault();
     if (!id || !name || !event) return;
 
+    setSubmitting(true);
     try {
       const { event: updatedEvent, participantId } = await eventService.submitResponse(
         id, 
@@ -78,6 +80,8 @@ export function EventDetail() {
     } catch (error) {
       console.error('Failed to submit:', error);
       alert('エラーが発生しました。');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -91,22 +95,17 @@ export function EventDetail() {
   );
 
   return (
-    <div className="fade-in" style={{ display: 'grid', gap: '2rem' }}>
-      {/* Event Info Header */}
+    <div className="fade-in" style={{ display: 'grid', gap: '1.5rem' }}>
+      {/* 1. Event Info Header */}
       <div className="glass-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-          <div>
-            <h2 style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>{event.title}</h2>
-            <p style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>{event.description}</p>
-          </div>
-          <button onClick={copyLink} className="secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {copied ? <Check size={18} color="var(--accent-3)" /> : <Copy size={18} />}
-            {copied ? 'コピーしました' : 'URLをコピー'}
-          </button>
+        <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{event.title}</h2>
+        <p style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', marginBottom: '0.5rem' }}>{event.description}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+          <Calendar size={16} /> 作成日: {format(new Date(event.createdAt || Date.now()), 'yyyy/MM/dd')}
         </div>
       </div>
 
-      {/* Availability Table */}
+      {/* 2. Availability Table (Top Results) */}
       <div className="glass-card" style={{ overflowX: 'hidden' }}>
         <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Clock size={24} /> 出欠状況
@@ -128,11 +127,11 @@ export function EventDetail() {
           </thead>
           <tbody>
             {event.dates.map(date => {
-              const stats = { ok: 0, maybe: 0, no: 0 };
-              event.participants.forEach(p => {
-                const res = p.responses[date.date];
-                if (res) stats[res]++;
-              });
+              const stats = {
+                ok: event.participants.filter(p => p.responses[date.date] === 'ok').length,
+                maybe: event.participants.filter(p => p.responses[date.date] === 'maybe').length,
+                no: event.participants.filter(p => p.responses[date.date] === 'no').length,
+              };
 
               return (
                 <tr key={date.date}>
@@ -155,84 +154,105 @@ export function EventDetail() {
             })}
           </tbody>
         </table>
-
-        {/* Comments Section */}
-        <div style={{ marginTop: '2rem' }}>
-          {event.participants.filter(p => p.comment).map(p => (
-            <div key={p.id} style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', padding: '1rem', background: '#f8f9fa', borderRadius: '12px' }}>
-              <MessageSquare size={20} color="var(--text-secondary)" />
-              <div>
-                <strong>{p.name}:</strong> <span style={{ color: 'var(--text-secondary)' }}>{p.comment}</span>
-              </div>
+        
+        {event.participants.length > 0 && (
+          <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #eee' }}>
+            <h4 style={{ fontSize: '0.9rem', marginBottom: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <MessageSquare size={16} /> コメント一覧
+            </h4>
+            <div style={{ display: 'grid', gap: '0.75rem' }}>
+              {event.participants.filter(p => p.comment).map(p => (
+                <div key={p.id} style={{ fontSize: '0.9rem', background: '#f8f9fa', padding: '0.75rem', borderRadius: '8px' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}:</span>
+                  <span style={{ marginLeft: '0.5rem', color: 'var(--text-secondary)' }}>{p.comment}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Response Form */}
-      <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+      {/* 3. Registration Form (Middle) */}
+      <div className="glass-card">
         <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <User size={24} /> あなたの回答を追加
+          <User size={24} /> {myParticipantId ? '回答を更新する' : '出欠を回答する'}
         </h3>
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label htmlFor="name">お名前</label>
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.5rem' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>お名前</label>
             <input
-              id="name"
               type="text"
-              placeholder="例：田中"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="例：オギ監"
               required
             />
           </div>
 
-          <div style={{ marginBottom: '2rem' }}>
-            <label>日程の都合</label>
+          <div>
+            <label style={{ display: 'block', marginBottom: '1rem', fontWeight: 600 }}>出欠回答</label>
             <div style={{ display: 'grid', gap: '0.75rem' }}>
               {event.dates.map(date => (
-                <div key={date.date} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: '#fff', border: '1px solid #eee', borderRadius: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div key={date.date} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.75rem', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ fontSize: '0.95rem' }}>
                     <span style={{ fontWeight: 600 }}>{format(new Date(date.date), 'MM/dd (eee)', { locale: ja })}</span>
-                    {date.time && <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{date.time}〜</span>}
+                    {date.time && <span style={{ marginLeft: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{date.time}〜</span>}
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <AvailabilityButton 
-                      active={responses[date.date] === 'ok'} 
-                      onClick={() => setResponses({...responses, [date.date]: 'ok'})}
-                      type="ok"
-                    />
-                    <AvailabilityButton 
-                      active={responses[date.date] === 'maybe'} 
-                      onClick={() => setResponses({...responses, [date.date]: 'maybe'})}
-                      type="maybe"
-                    />
-                    <AvailabilityButton 
-                      active={responses[date.date] === 'no'} 
-                      onClick={() => setResponses({...responses, [date.date]: 'no'})}
-                      type="no"
-                    />
+                    {(['ok', 'maybe', 'no'] as Availability[]).map(type => (
+                      <AvailabilityButton
+                        key={type}
+                        type={type}
+                        active={responses[date.date] === type}
+                        onClick={() => setResponses(prev => ({ ...prev, [date.date]: type }))}
+                      />
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div style={{ marginBottom: '2rem' }}>
-            <label htmlFor="comment">コメント (任意)</label>
-            <input
-              id="comment"
-              type="text"
-              placeholder="遅れるかもしれません、など"
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>コメント（任意）</label>
+            <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
+              placeholder="例：少し遅れるかもしれません！"
+              rows={2}
             />
           </div>
 
-          <button type="submit" style={{ width: '100%', padding: '1rem' }} disabled={!name}>
-            回答を登録する
+          <button type="submit" disabled={submitting} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
+            {submitting ? '送信中...' : myParticipantId ? '回答を更新する' : 'この内容で回答する'}
           </button>
         </form>
+      </div>
+
+      {/* 4. URL Copy Section (Bottom) */}
+      <div className="glass-card" style={{ textAlign: 'center', background: 'var(--bg-gradient)', color: 'white' }}>
+        <h3 style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>メンバーに共有しましょう</h3>
+        <p style={{ fontSize: '0.9rem', marginBottom: '1.5rem', opacity: 0.9 }}>
+          このページのURLを送るだけで、みんなの出欠を集計できます。
+        </p>
+        <button 
+          onClick={copyLink} 
+          className="secondary" 
+          style={{ 
+            width: '100%', 
+            background: 'white', 
+            color: 'var(--text-primary)',
+            padding: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.75rem',
+            fontWeight: 'bold'
+          }}
+        >
+          {copied ? <Check size={20} color="#4caf50" /> : <Copy size={20} />}
+          {copied ? 'URLをコピーしました！' : 'イベントURLをコピーする'}
+        </button>
       </div>
     </div>
   );
