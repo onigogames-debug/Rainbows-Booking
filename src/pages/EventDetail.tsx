@@ -82,21 +82,21 @@ export function EventDetail() {
       </div>
 
       {/* Availability Table */}
-      <div className="glass-card" style={{ overflowX: 'auto' }}>
-        <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="glass-card" style={{ overflowX: 'hidden' }}>
+        <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Clock size={24} /> 出欠状況
         </h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '500px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto' }}>
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', padding: '1rem', borderBottom: '2px solid #eee' }}>日程</th>
+              <th style={{ textAlign: 'left', padding: '0.75rem 0.5rem', borderBottom: '2px solid #eee', width: '80px' }}>日程</th>
               {event.participants.map(p => (
-                <th key={p.id} style={{ padding: '1rem', borderBottom: '2px solid #eee', fontWeight: 600 }}>
+                <th key={p.id} style={{ padding: '0.75rem 0.25rem', borderBottom: '2px solid #eee', fontWeight: 600, fontSize: '0.85rem' }}>
                   {p.name}
                 </th>
               ))}
-              <th style={{ padding: '1rem', borderBottom: '2px solid #eee', color: 'var(--text-secondary)' }}>
-                ○ / △ / ×
+              <th style={{ padding: '0.75rem 0.25rem', borderBottom: '2px solid #eee', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                計
               </th>
             </tr>
           </thead>
@@ -110,19 +110,19 @@ export function EventDetail() {
 
               return (
                 <tr key={date.date}>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
-                    <div style={{ fontWeight: 600 }}>{format(new Date(date.date), 'MM/dd (eee)', { locale: ja })}</div>
-                    {date.time && <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{date.time}〜</div>}
+                  <td style={{ padding: '0.75rem 0.5rem', borderBottom: '1px solid #eee' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{format(new Date(date.date), 'MM/dd (eee)', { locale: ja })}</div>
+                    {date.time && <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{date.time}〜</div>}
                   </td>
                   {event.participants.map(p => (
-                    <td key={p.id} style={{ padding: '1rem', borderBottom: '1px solid #eee', textAlign: 'center' }}>
+                    <td key={p.id} style={{ padding: '0.5rem 0.25rem', borderBottom: '1px solid #eee', textAlign: 'center' }}>
                       <AvailabilityIcon type={p.responses[date.date]} />
                     </td>
                   ))}
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #eee', textAlign: 'center', fontSize: '0.9rem' }}>
-                    <span style={{ color: '#4caf50' }}>{stats.ok}</span> / 
-                    <span style={{ color: '#ff9800' }}> {stats.maybe}</span> / 
-                    <span style={{ color: '#f44336' }}> {stats.no}</span>
+                  <td style={{ padding: '0.5rem 0.25rem', borderBottom: '1px solid #eee', textAlign: 'center', fontSize: '0.8rem' }}>
+                    <span style={{ color: '#4caf50' }}>{stats.ok}</span>/ 
+                    <span style={{ color: '#ff9800' }}>{stats.maybe}</span>/ 
+                    <span style={{ color: '#f44336' }}>{stats.no}</span>
                   </td>
                 </tr>
               );
@@ -213,9 +213,9 @@ export function EventDetail() {
 }
 
 function AvailabilityIcon({ type }: { type: Availability }) {
-  if (type === 'ok') return <span style={{ color: '#4caf50', fontSize: '1.5rem', fontWeight: 'bold' }}>○</span>;
-  if (type === 'maybe') return <span style={{ color: '#ff9800', fontSize: '1.5rem', fontWeight: 'bold' }}>△</span>;
-  return <span style={{ color: '#f44336', fontSize: '1.5rem', fontWeight: 'bold' }}>×</span>;
+  return <span style={{ color: type === 'ok' ? '#4caf50' : type === 'maybe' ? '#ff9800' : '#f44336', fontSize: '1.2rem', fontWeight: 'bold' }}>
+    {type === 'ok' ? '○' : type === 'maybe' ? '△' : '×'}
+  </span>;
 }
 
 function AvailabilityButton({ active, onClick, type }: { active: boolean, onClick: () => void, type: Availability }) {
@@ -230,14 +230,14 @@ function AvailabilityButton({ active, onClick, type }: { active: boolean, onClic
       type="button"
       onClick={onClick}
       style={{
-        padding: '0.5rem 1rem',
+        padding: '0.4rem 0.6rem',
         background: active ? styles[type].color : 'white',
         color: active ? 'white' : '#ccc',
         border: `2px solid ${active ? styles[type].color : '#eee'}`,
         borderRadius: '8px',
-        fontSize: '1.2rem',
+        fontSize: '1rem',
         fontWeight: 'bold',
-        minWidth: '50px'
+        minWidth: '40px'
       }}
     >
       {styles[type].label}
