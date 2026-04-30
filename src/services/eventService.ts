@@ -67,38 +67,48 @@ export const eventService = {
   },
 
   // Add or update participant response
-  async submitResponse(eventId: string, response: Omit<ParticipantResponse, 'id' | 'updatedAt'>): Promise<EventData> {
+  async submitResponse(eventId: string, response: Omit<ParticipantResponse, 'id' | 'updatedAt'>, participantId?: string): Promise<{ event: EventData, participantId: string }> {
+    const id = participantId || nanoid(8);
     const participant: ParticipantResponse = {
       ...response,
-      id: nanoid(6),
+      id,
       updatedAt: new Date().toISOString(),
     };
 
     if (supabase) {
-      // Get current event data
       const { data: event, error: fetchError } = await supabase.from('events').select('*').eq('id', eventId).single();
-      if (fetchError || !event) throw new Error('Event not found in Database');
+      if (fetchError || !event) throw new Error('Event not found');
 
-      const updatedParticipants = [...(event.participants || []), participant];
-      const { error: updateError } = await supabase.from('events').update({ participants: updatedParticipants }).eq('id', eventId);
+      let updatedParticipants = [...(event.participants || [])];
+      const existingIndex = updatedParticipants.findIndex(p => p.id === id);
       
+      if (existingIndex >= 0) {
+        updatedParticipants[existingIndex] = participant;
+      } else {
+        updatedParticipants.push(participant);
+      }
+
+      const { error: updateError } = await supabase.from('events').update({ participants: updatedParticipants }).eq('id', eventId);
       if (updateError) throw updateError;
-      return {
-        id: event.id,
-        title: event.title,
-        description: event.description,
-        dates: event.dates,
-        participants: updatedParticipants,
-        createdAt: event.created_at || event.createdAt
+      
+      return { 
+        event: { ...event, participants: updatedParticipants, createdAt: event.created_at || event.createdAt },
+        participantId: id
       };
     } else {
       const events = this._getAllEvents();
       const event = events[eventId];
       if (!event) throw new Error('Event not found');
 
-      event.participants.push(participant);
+      const existingIndex = event.participants.findIndex(p => p.id === id);
+      if (existingIndex >= 0) {
+        event.participants[existingIndex] = participant;
+      } else {
+        event.participants.push(participant);
+      }
+      
       this._saveAllEvents(events);
-      return event;
+      return { event, participantId: id };
     }
   },
 

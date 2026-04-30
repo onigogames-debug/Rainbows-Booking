@@ -14,6 +14,7 @@ export function EventDetail() {
   const [responses, setResponses] = useState<Record<string, Availability>>({});
   const [comment, setComment] = useState('');
   const [copied, setCopied] = useState(false);
+  const [myParticipantId, setMyParticipantId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -26,11 +27,24 @@ export function EventDetail() {
       eventService.getEvent(id).then(data => {
         setEvent(data);
         setLoading(false);
-        // Initialize default responses to 'ok'
+        
         if (data) {
+          // Initialize default responses to 'ok'
           const initial: Record<string, Availability> = {};
           data.dates.forEach(d => initial[d.date] = 'ok');
           setResponses(initial);
+
+          // Check if I have already responded
+          const savedId = localStorage.getItem(`event_auth_${id}`);
+          if (savedId) {
+            setMyParticipantId(savedId);
+            const me = data.participants.find(p => p.id === savedId);
+            if (me) {
+              setName(me.name);
+              setComment(me.comment || '');
+              setResponses(me.responses);
+            }
+          }
         }
       });
 
@@ -50,10 +64,21 @@ export function EventDetail() {
     e.preventDefault();
     if (!id || !name || !event) return;
 
-    const updatedEvent = await eventService.submitResponse(id, { name, responses, comment });
-    setEvent({ ...updatedEvent }); // Trigger re-render
-    setName('');
-    setComment('');
+    try {
+      const { event: updatedEvent, participantId } = await eventService.submitResponse(
+        id, 
+        { name, responses, comment },
+        myParticipantId || undefined
+      );
+
+      setEvent({ ...updatedEvent });
+      localStorage.setItem(`event_auth_${id}`, participantId);
+      setMyParticipantId(participantId);
+      alert(myParticipantId ? '回答を更新しました！' : '回答を送信しました！');
+    } catch (error) {
+      console.error('Failed to submit:', error);
+      alert('エラーが発生しました。');
+    }
   };
 
   if (loading) return <div style={{ textAlign: 'center', padding: '4rem' }}>読み込み中...</div>;
@@ -93,6 +118,7 @@ export function EventDetail() {
               {event.participants.map(p => (
                 <th key={p.id} style={{ padding: '0.75rem 0.25rem', borderBottom: '2px solid #eee', fontWeight: 600, fontSize: '0.85rem' }}>
                   {p.name}
+                  {p.id === myParticipantId && <div style={{ fontSize: '0.6rem', color: 'var(--accent-1)' }}>(自分)</div>}
                 </th>
               ))}
               <th style={{ padding: '0.75rem 0.25rem', borderBottom: '2px solid #eee', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
