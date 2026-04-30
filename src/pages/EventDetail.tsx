@@ -16,6 +16,12 @@ export function EventDetail() {
   const [copied, setCopied] = useState(false);
   const [myParticipantId, setMyParticipantId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     if (id) {
@@ -58,6 +64,7 @@ export function EventDetail() {
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
+    showToast('URLをコピーしました！');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -76,10 +83,10 @@ export function EventDetail() {
       setEvent({ ...updatedEvent });
       localStorage.setItem(`event_auth_${id}`, participantId);
       setMyParticipantId(participantId);
-      alert(myParticipantId ? '回答を更新しました！' : '回答を送信しました！');
+      showToast(myParticipantId ? '回答を更新しました！' : '回答を送信しました！');
     } catch (error) {
       console.error('Failed to submit:', error);
-      alert('エラーが発生しました。');
+      showToast('エラーが発生しました。');
     } finally {
       setSubmitting(false);
     }
@@ -96,6 +103,15 @@ export function EventDetail() {
 
   return (
     <div className="fade-in" style={{ display: 'grid', gap: '1.5rem' }}>
+      {/* Toast Notification */}
+      {toast && (
+        <div className="toast-container">
+          <div className="toast">
+            <Check size={18} /> {toast}
+          </div>
+        </div>
+      )}
+
       {/* 1. Event Info Header */}
       <div className="glass-card">
         <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{event.title}</h2>
