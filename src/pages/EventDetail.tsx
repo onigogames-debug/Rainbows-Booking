@@ -17,6 +17,12 @@ export function EventDetail() {
 
   useEffect(() => {
     if (id) {
+      // Prevent indexing of event pages
+      const meta = document.createElement('meta');
+      meta.name = 'robots';
+      meta.content = 'noindex, nofollow';
+      document.head.appendChild(meta);
+
       eventService.getEvent(id).then(data => {
         setEvent(data);
         setLoading(false);
@@ -27,6 +33,10 @@ export function EventDetail() {
           setResponses(initial);
         }
       });
+
+      return () => {
+        document.head.removeChild(meta);
+      };
     }
   }, [id]);
 
