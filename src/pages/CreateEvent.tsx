@@ -6,23 +6,28 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { eventService } from '../services/eventService';
 import Confetti from 'react-confetti';
+import type { EventDate } from '../types';
 
 export function CreateEvent() {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [dates, setDates] = useState<string[]>([]);
+  const [dates, setDates] = useState<EventDate[]>([]);
   const [isCreated, setIsCreated] = useState(false);
 
   const handleAddDate = (e: React.ChangeEvent<HTMLInputElement>) => {
     const date = e.target.value;
-    if (date && !dates.includes(date)) {
-      setDates([...dates, date].sort());
+    if (date && !dates.find(d => d.date === date)) {
+      setDates([...dates, { date }].sort((a, b) => a.date.localeCompare(b.date)));
     }
   };
 
+  const updateDateTime = (dateStr: string, time: string) => {
+    setDates(dates.map(d => d.date === dateStr ? { ...d, time } : d));
+  };
+
   const removeDate = (dateToRemove: string) => {
-    setDates(dates.filter(d => d !== dateToRemove));
+    setDates(dates.filter(d => d.date !== dateToRemove));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,31 +104,42 @@ export function CreateEvent() {
             />
           </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'grid', gap: '0.75rem' }}>
             <AnimatePresence>
-              {dates.map((date) => (
+              {dates.map((item) => (
                 <motion.div
-                  key={date}
+                  key={item.date}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.8 }}
+                  className="glass-card"
                   style={{
-                    background: 'var(--primary)',
-                    color: 'var(--secondary)',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '20px',
+                    padding: '0.75rem 1rem',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
-                    fontWeight: 600
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                    background: 'white',
+                    border: '1px solid #eee'
                   }}
                 >
-                  {format(new Date(date), 'MM/dd (eee)', { locale: ja })}
-                  <X
-                    size={16}
-                    style={{ cursor: 'pointer', opacity: 0.8 }}
-                    onClick={() => removeDate(date)}
-                  />
+                  <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {format(new Date(item.date), 'MM/dd (eee)', { locale: ja })}
+                  </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <input
+                      type="time"
+                      value={item.time || ''}
+                      onChange={(e) => updateDateTime(item.date, e.target.value)}
+                      style={{ width: 'auto', padding: '4px 8px', borderRadius: '6px' }}
+                    />
+                    <X
+                      size={20}
+                      style={{ cursor: 'pointer', opacity: 0.5, color: 'var(--accent-1)' }}
+                      onClick={() => removeDate(item.date)}
+                    />
+                  </div>
                 </motion.div>
               ))}
             </AnimatePresence>

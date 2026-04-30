@@ -29,7 +29,7 @@ export function EventDetail() {
         // Initialize default responses to 'ok'
         if (data) {
           const initial: Record<string, Availability> = {};
-          data.dates.forEach(d => initial[d] = 'ok');
+          data.dates.forEach(d => initial[d.date] = 'ok');
           setResponses(initial);
         }
       });
@@ -104,18 +104,19 @@ export function EventDetail() {
             {event.dates.map(date => {
               const stats = { ok: 0, maybe: 0, no: 0 };
               event.participants.forEach(p => {
-                const res = p.responses[date];
+                const res = p.responses[date.date];
                 if (res) stats[res]++;
               });
 
               return (
-                <tr key={date}>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #eee', fontWeight: 600 }}>
-                    {format(new Date(date), 'MM/dd (eee)', { locale: ja })}
+                <tr key={date.date}>
+                  <td style={{ padding: '1rem', borderBottom: '1px solid #eee' }}>
+                    <div style={{ fontWeight: 600 }}>{format(new Date(date.date), 'MM/dd (eee)', { locale: ja })}</div>
+                    {date.time && <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{date.time}〜</div>}
                   </td>
                   {event.participants.map(p => (
                     <td key={p.id} style={{ padding: '1rem', borderBottom: '1px solid #eee', textAlign: 'center' }}>
-                      <AvailabilityIcon type={p.responses[date]} />
+                      <AvailabilityIcon type={p.responses[date.date]} />
                     </td>
                   ))}
                   <td style={{ padding: '1rem', borderBottom: '1px solid #eee', textAlign: 'center', fontSize: '0.9rem' }}>
@@ -164,22 +165,25 @@ export function EventDetail() {
             <label>日程の都合</label>
             <div style={{ display: 'grid', gap: '0.75rem' }}>
               {event.dates.map(date => (
-                <div key={date} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: '#fff', border: '1px solid #eee', borderRadius: '12px' }}>
-                  <span style={{ fontWeight: 600 }}>{format(new Date(date), 'MM/dd (eee)', { locale: ja })}</span>
+                <div key={date.date} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: '#fff', border: '1px solid #eee', borderRadius: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 600 }}>{format(new Date(date.date), 'MM/dd (eee)', { locale: ja })}</span>
+                    {date.time && <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{date.time}〜</span>}
+                  </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <AvailabilityButton 
-                      active={responses[date] === 'ok'} 
-                      onClick={() => setResponses({...responses, [date]: 'ok'})}
+                      active={responses[date.date] === 'ok'} 
+                      onClick={() => setResponses({...responses, [date.date]: 'ok'})}
                       type="ok"
                     />
                     <AvailabilityButton 
-                      active={responses[date] === 'maybe'} 
-                      onClick={() => setResponses({...responses, [date]: 'maybe'})}
+                      active={responses[date.date] === 'maybe'} 
+                      onClick={() => setResponses({...responses, [date.date]: 'maybe'})}
                       type="maybe"
                     />
                     <AvailabilityButton 
-                      active={responses[date] === 'no'} 
-                      onClick={() => setResponses({...responses, [date]: 'no'})}
+                      active={responses[date.date] === 'no'} 
+                      onClick={() => setResponses({...responses, [date.date]: 'no'})}
                       type="no"
                     />
                   </div>

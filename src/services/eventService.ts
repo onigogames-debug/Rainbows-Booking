@@ -1,16 +1,19 @@
 import { nanoid } from 'nanoid';
-import type { EventData, ParticipantResponse } from '../types';
+import type { EventData, ParticipantResponse, EventDate } from '../types';
 
 const STORAGE_KEY = 'rainbow_booking_events';
 
 export const eventService = {
   // Create a new event
-  async createEvent(title: string, description: string, dates: string[]): Promise<EventData> {
+  async createEvent(title: string, description: string, dates: EventDate[]): Promise<EventData> {
     const newEvent: EventData = {
       id: nanoid(10),
       title,
       description,
-      dates: dates.sort(),
+      dates: dates.sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return (a.time || '').localeCompare(b.time || '');
+      }),
       participants: [],
       createdAt: new Date().toISOString(),
     };

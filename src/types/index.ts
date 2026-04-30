@@ -8,11 +8,16 @@ export interface ParticipantResponse {
   updatedAt: string;
 }
 
+export interface EventDate {
+  date: string; // ISO date string (YYYY-MM-DD)
+  time?: string; // Time string (HH:mm)
+}
+
 export interface EventData {
   id: string;
   title: string;
   description: string;
-  dates: string[]; // ISO date strings
+  dates: EventDate[];
   participants: ParticipantResponse[];
   createdAt: string;
 }
