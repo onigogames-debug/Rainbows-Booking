@@ -39,13 +39,29 @@ export const eventService = {
   // Get event by ID
   async getEvent(id: string): Promise<EventData | null> {
     if (supabase) {
-      const { data, error } = await supabase.from('events').select('*').eq('id', id).single();
-      if (error || !data) return null;
-      return {
-        ...data,
-        createdAt: data.created_at // handle field naming difference
-      };
+      try {
+        const { data, error } = await supabase.from('events').select('*').eq('id', id).single();
+        
+        if (data) {
+          return {
+            id: data.id,
+            title: data.title,
+            description: data.description,
+            dates: data.dates,
+            participants: data.participants || [],
+            createdAt: data.created_at || data.createdAt, // handle both cases
+          };
+        }
+        
+        if (error && error.code !== 'PGRST116') { // PGRST116 is 'not found'
+          console.error('Supabase fetch error:', error);
+        }
+      } catch (err) {
+        console.error('Supabase connection failed:', err);
+      }
     }
+
+    // Fallback to localStorage
     const events = this._getAllEvents();
     return events[id] || null;
   },
@@ -61,13 +77,20 @@ export const eventService = {
     if (supabase) {
       // Get current event data
       const { data: event, error: fetchError } = await supabase.from('events').select('*').eq('id', eventId).single();
-      if (fetchError || !event) throw new Error('Event not found');
+      if (fetchError || !event) throw new Error('Event not found in Database');
 
       const updatedParticipants = [...(event.participants || []), participant];
       const { error: updateError } = await supabase.from('events').update({ participants: updatedParticipants }).eq('id', eventId);
       
       if (updateError) throw updateError;
-      return { ...event, participants: updatedParticipants, createdAt: event.created_at };
+      return {
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        dates: event.dates,
+        participants: updatedParticipants,
+        createdAt: event.created_at || event.createdAt
+      };
     } else {
       const events = this._getAllEvents();
       const event = events[eventId];
