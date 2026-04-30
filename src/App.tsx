@@ -8,11 +8,11 @@ import './index.css';
 function App() {
   return (
     <Router>
-      <header style={{ textAlign: 'center', marginBottom: '2rem' }}>
+      <header style={{ textAlign: 'center', marginBottom: '1.5rem', paddingTop: '0.5rem' }}>
         <Link to="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Rainbow size={40} className="rainbow-text" stroke="url(#rainbow-gradient)" />
-          <h1 style={{ margin: 0, fontSize: '2.5rem' }}>
-            <span className="rainbow-text">Rainbows</span> Booking <span style={{ fontSize: '1rem', display: 'block', fontWeight: 400, color: 'var(--text-secondary)' }}>by オギ監さん</span>
+          <Rainbow size={32} className="rainbow-text" stroke="url(#rainbow-gradient)" />
+          <h1 style={{ margin: 0, fontSize: '1.8rem' }}>
+            <span className="rainbow-text">Rainbows</span> Booking
           </h1>
         </Link>
         <svg width="0" height="0">
@@ -34,8 +34,8 @@ function App() {
         </Routes>
       </main>
 
-      <footer style={{ textAlign: 'center', marginTop: '4rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-        <p>&copy; 2026 Rainbows Booking - Open Source Scheduling Tool</p>
+      <footer style={{ textAlign: 'center', marginTop: '3rem', paddingBottom: '2rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+        <p style={{ margin: 0 }}>© 2026 Rainbows Booking</p>
       </footer>
     </Router>
   );
